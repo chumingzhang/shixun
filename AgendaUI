@@ -1,0 +1,305 @@
+//AgendaUI.hpp
+#ifndef __AGENDAUI_H__
+#define __AGENDAUI_H__
+
+#include "AgendaService.cpp"
+#include <iostream>
+#include <string>
+using namespace std;
+
+class AgendaUI {
+    public:
+        AgendaUI();
+        void OperationLoop(void);
+
+    private:
+        // task functions
+        void startAgenda(void);
+        std::string getOperation();
+            
+        bool executeOperation(std::string op);
+        
+        void userLogIn(void);
+        void userRegister(void);
+        void quitAgenda(void);
+        void userLogOut(void);
+        void deleteUser(void);
+        void listAllUsers(void);
+        void createMeeting(void);
+        void listAllMeetings(void);
+        void listAllSponsorMeetings(void);
+        void listAllParticipateMeetings(void);
+        void queryMeetingByTitle(void);
+        void queryMeetingByTimeInterval(void);
+        void deleteMeetingByTitle(void);
+        void deleteAllMeetings(void);
+        void printMeetings(std::list<Meeting> meetings);
+        void printUsers(std::list<User> users);
+        // dates
+        std::string userName_;
+        std::string userPassword_;
+        AgendaService agendaService_;
+};
+
+#endif
+
+
+
+
+//AgendaUI.cpp
+#include "AgendaUI.hpp"
+
+AgendaUI::AgendaUI()
+{
+	startAgenda();
+}
+
+void AgendaUI::OperationLoop(void)
+{
+	string operation;
+	do{
+		cout << "________________________________Agenda________________________________\n"
+             << "Action :\n"
+             << "l   - log in Agenda by user name and password\n"
+             << "r   - register an Agenda account\n"
+             << "q   - quit Agenda\n"
+             << "______________________________________________________________________\n"
+             << "\n" << "Agenda : ~$ ";
+        cin >> operation;
+        switch(operation[0])
+        {
+        case 'l':
+        	userLogIn();
+        	break;
+        case 'r':
+        	userRegister();
+        	break;
+        case 'q':
+        	quitAgenda();
+        	break;
+        default:
+        	break;
+		}
+	}while(operator[0] != 'q');
+}
+
+void AgendaUI::startAgenda(void)
+{
+	agendaService_.startAgenda();
+}
+
+string AgendaUI::getOperation()
+{
+	string operation;
+	cout << "________________________________Agenda________________________________\n"
+         << "Action :\n"
+         << "o   - log out Agenda\n"
+         << "dc  - delete Agenda account\n"
+         << "lu  - list all Agenda user\n"
+         << "cm  - create a meeting\n"
+         << "la  - list all meetings\n"
+         << "las - list all sponsor meetings\n"
+         << "lap - list all participate meetings\n"
+         << "qm  - query meeting by title\n"
+         << "qt  - query meeting by time interval\n"
+         << "dm  - delete meeting by title\n"
+         << "da  - delete all meetings\n"
+         << "______________________________________________________________________\n"
+         << "\n" << "Agenda@" << userName_ << " :# ";
+    cin >> operation;
+    return operation;
+}
+
+bool AgendaUI::executeOperation(string op)
+{
+	if (op == "o") {
+        userLogOut();
+        return false;
+    }
+    else if (op == "dc") {
+        deleteUser();
+        return false;
+    }
+    else if (op == "lu") {
+        listAllUsers();
+        return true;
+    }
+    else if (op == "cm") {
+        createMeeting();
+        return true;
+    }
+    else if (op == "la") {
+        listAllMeetings();
+        return true;
+    }
+    else if (op == "las") {
+        listAllSponsorMeetings();
+        return true;
+    }
+    else if (op == "lap") {
+        listAllParticipateMeetings();
+        return true;
+    }
+    else if (op == "qm") {
+        queryMeetingByTitle();
+        return true;
+    }
+    else if (op == "qt") {
+        queryMeetingByTimeInterval();
+        return true;
+    }
+    else if (op == "dm") {
+        deleteMeetingByTitle();
+        return true;
+    }
+    else if (op == "da") {
+        deleteAllMeetings();
+        return true;
+    }
+    return true;
+}
+
+void AgendaUI::userLogIn(void)
+{
+	string userName, password;
+	cout << "[log in] [user name] [password]\n"
+         << "[log in] ";
+    cin >> userName >> password;
+    if (agendaService_.userLogIn(userName, password)) {
+        userName_ = userName;
+        userPassword_ = password;
+        cout << "[log in] succeed!\n";
+        while(executeOperation(getOperation()));
+    }
+    else {
+        cout << "[error] log in fail!\n";
+    }
+}
+
+void AgendaUI::userRegister(void)
+{
+	string userName, password, email, phone;
+	cout << "[register] [user name] [password] [email] [phone]\n"
+         << "[register] ";
+    cin >> userName >> password >> email >> phone;
+    if (agendaService_.userRegister(userName, password, email, phone))
+	{
+        userName_ = userName;
+        userPassword_ = password;
+        cout << "[register] succeed!\n";
+        while(executeOperation(getOperation()));
+    }
+    else {
+        cout << "[error] register fail!\n";
+    }
+}
+
+void AgendaUI::quitAgenda(void)
+{
+    agendaService_.quitAgenda();
+}
+
+void AgendaUI::userLogOut(void)
+{
+    userName_.clear();
+    userPassword_.clear();
+}
+
+void AgendaUI::deleteUser(void)
+{
+    agendaService_.deleteUser(userName_, userPassword_);
+    userLogOut();
+}
+
+void AgendaUI::listAllUsers(void)
+{
+    printUsers(agendaService_.listAllUsers());
+}
+
+void AgendaUI::createMeeting(void)
+{
+    string title, participator, startDate, endDate;
+    cout << "[create meeting] [title] [participator] [start time(yyyy-mm-dd/hh:mm)] [end time(yyyy-mm-dd/hh:mm)]\n"
+         << "[create meeting] ";
+    cin >> title >> participator >> startDate >> endDate;
+    if (agendaService_.createMeeting(userName_, title, participator, startDate, endDate))
+        cout << "[create meeting] succeed!\n";
+    else
+        cout << "[error] create meeting fail!\n";
+}
+
+void AgendaUI::listAllMeetings(void)
+{
+    printMeetings(agendaService_.listAllMeetings(userName_));
+}
+
+void AgendaUI::listAllSponsorMeetings(void)
+{
+    printMeetings(agendaService_.listAllSponsorMeetings(userName_));
+}
+
+void AgendaUI::listAllParticipateMeetings(void)
+{
+    printMeetings(agendaService_.listAllParticipateMeetings(userName_));
+}
+
+void AgendaUI::queryMeetingByTitle(void)
+{
+    string title;
+    cout << "[query meeting] [title]\n"
+         << "[query meeting] ";
+    cin >> title;
+    printMeetings(agendaService_.meetingQuery(userName_, title));
+}
+
+void AgendaUI::queryMeetingByTimeInterval(void)
+{
+    string startDate, endDate;
+    cout << "[query meetings] [start time(yyyy-mm-dd/hh:mm)] [end time(yyyy-mm-dd/hh:mm)]\n"
+         << "[query meetings] ";
+    cin >> startDate >> endDate;
+    printMeetings(agendaService_.meetingQuery(userName_, startDate, endDate));
+}
+
+void AgendaUI::deleteMeetingByTitle(void)
+{
+    string title;
+    cout << "[delete meeting] [title]\n"
+         << "[delete meeting] ";
+    cin >> title;
+    if (agendaService_.deleteMeeting(userName_, title))
+        cout << "[delete meeting by title] succeed!\n";
+    else
+        cout << "[error] delete meeting fail!\n";
+}
+
+void AgendaUI::deleteAllMeetings(void)
+{
+    agendaService_.deleteAllMeetings(userName_);
+    cout << "[delete all meetings] succeed!\n";
+}
+
+void AgendaUI::printMeetings(std::list<Meeting> meetings)
+{
+    cout << "title\t" << "sponsor\t" << "participator\t"
+         << "start time\t" << "end time\n";
+    for (auto itr = meetings.begin(); itr != meetings.end(); ++itr)
+	{
+        cout << itr->getTitle() << "\t"
+             << itr->getSponsor() << "\t"
+             << itr->getParticipator() << "\t"
+             << Date::dateToString(itr->getStartDate()) << "\t"
+             << Date::dateToString(itr->getEndDate()) << "\n";
+    }
+}
+
+void AgendaUI::printUsers(std::list<User> users)
+{
+    cout << "name\t" << "email\t" << "phone\n";
+    for (auto itr = users.begin(); itr != users.end(); ++itr)
+	{
+        cout << itr->getName() << "\t"
+             << itr->getEmail() << "\t"
+             << itr->getPhone() << "\n";
+    }
+}
