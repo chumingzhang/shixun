@@ -1,0 +1,238 @@
+AgendaService.hpp
+#ifndef __AGENDASERVICE_H__
+#define __AGENDASERVICE_H__
+
+#include "../stage1/Storage.hpp"
+#include <list>
+#include <string>
+using namespace std;
+
+class AgendaService {
+    public:
+        AgendaService();
+        ~AgendaService();
+        bool userLogIn(std::string userName, std::string password);
+        
+		bool userRegister(std::string userName, std::string password,
+                          std::string email, std::string phone);
+        
+		bool deleteUser(std::string userName, std::string password);
+    	// a user can only delete itself
+        std::list<User> listAllUsers(void);
+
+        bool createMeeting(std::string userName, std::string title,
+                           std::string participator,
+                           std::string startDate,
+						   std::string endDate);
+						   
+        std::list<Meeting> meetingQuery(std::string userName, std::string title);
+        
+        std::list<Meeting> meetingQuery(std::string userName,
+										std::string startDate,
+                                        std::string endDate);
+                                        
+        std::list<Meeting> listAllMeetings(std::string userName);
+        
+        std::list<Meeting> listAllSponsorMeetings(std::string userName);
+        
+        std::list<Meeting> listAllParticipateMeetings(std::string userName);
+        
+        bool deleteMeeting(std::string userName, std::string title);
+        
+        bool deleteAllMeetings(std::string userName);
+
+        void startAgenda(void);
+        void quitAgenda(void);
+
+    private:
+        Storage *storage_;
+};
+
+#endif
+
+
+
+
+AgendaService.cpp
+#include "AgendaService.hpp"
+#include <string>
+using namespace std;
+AgendaService::AgendaService()
+{
+	startAgenda();
+}
+
+AgendaService::~AgendaService()
+{
+	quitAgenda();
+}
+
+bool AgendaService::userLogIn(string userName, string password)
+{
+	auto filter = [userName, password](const User &user)
+	{
+		return ((user.getName() == userName) && (user.getPassword == password));
+	};
+	return storage_->queryUser(filter).size() > 0;
+}
+
+bool AgendaService::userRegister(std::string userName,
+								 std::string password,
+                          		 std::string email,
+								 std::string phone)
+{
+	auto filter = [userName, password, email, phone](const User &user)
+	{
+		return (user.getName() == userName ||
+				user.getPassword == password ||
+				user.getPhone() == phone)
+	};
+	if(storage_->queryUser(filter).size() == 0)
+	{
+		storage_->createUser(User(userName, password, email, phone);
+		return true;
+	}
+	return false;
+}
+
+bool AgendaService::deleteUser(std::string userName, std::string password)
+{
+	auto filter = [userName, password](const User &user)
+	{
+		return user.getName() == userName && user.getPassword == password;
+	};
+	if(storage_->queryUser(filter).size() > 0)
+	{
+		deleteAllMeetings(userName);
+		return true;
+	}
+	return false;
+}
+
+std::list<User> AgendaService::listAllUsers(void)
+{
+	auto filter = [](const User &user)
+	{
+		return true;
+	};
+	return storage_->queryUser(filter);
+}
+
+bool AgendaService::createMeeting(std::string userName,
+				   std::string title,
+                   std::string participator,
+                   std::string startDate,
+				   std::string endDate)
+{
+	if(!Date::isValid(Date::stringToDate(startDate))
+	|| !Date::isValid(Date::stringToDate(endDate)))
+		return false;
+		
+	auto filter1 = [participator](const User &user)
+	{
+		return user.getName() == participator;
+	};
+	if(storage_->queryUser(filter1).size() <= 0)
+		return false;
+		
+	auto filter1 = [title](const Meeting &meeting)
+	{
+		return meeting.getTitle() == title;
+	};
+	if(storage_->queryMeeting(filter2).size() > 0)
+		return false;
+		
+	if (meetingQuery(userName, startDate, endDate).size() > 0
+     || meetingQuery(participator, startDate, endDate).size() > 0)
+        return false;
+        
+    stroage_->creatMeeting(Meeting(userName, participator, Date::stringToDate(startDate), Date::stringToDate(endDate), title));
+    return true;
+}
+
+std::list<Meeting> AgendaService::meetingQuery(string userName, string title)
+{
+	auto filter = [userName, title](const Meeting& meeting)
+	{
+        return (meeting.getSponsor() == userName ||
+                meeting.getParticipator() == userName) &&
+                meeting.getTitle() == title;
+    };
+    return storage_->queryMeeting(filter);
+}
+
+std::list<Meeting> AgendaService::meetingQuery(string userName,
+											   string startDate,
+                                			   string endDate)
+{
+	auto filter = [userName, startDate, endDate](const Meeting &meeting)
+	{
+		return(meeting.getSponsor() == userName || meeting.getgetParticipator == userName)
+			  ((meeting.getStartDate() >= Date::stringToDate(startDate) &&
+                 meeting.getStartDate() <= Date::stringToDate(endDate) ||
+                (meeting.getEndDate() >= Date::stringToDate(startDate) &&
+                 meeting.getEndDate() <= Date::stringToDate(endDate)) ||
+                (meeting.getStartDate() <= Date::stringToDate(startDate) &&
+                 meeting.getEndDate() >= Date::stringToDate(endDate))));
+	};
+	return storage_->queryMeeting(filter);
+}
+
+std::list<Meeting> AgendaService::listAllMeetings(string userName)
+{
+	auto filter = [userName](const Meeting &meeting)
+	{
+        return meeting.getSponsor() == userName ||
+               meeting.getParticipator() == userName;
+    };
+    return storage_->queryMeeting(filter);
+}
+
+std::list<Meeting> AgendaService::listAllSponsorMeetings(string userName)
+{
+	auto filter = [userName](const Meeting &meeting)
+	{
+        return meeting.getSponsor() == userName;
+    };
+    return storage_->queryMeeting(filter);
+}
+
+std::list<Meeting> AgendaService::listAllParticipateMeetings(std::string userName)
+{
+	auto filter = [userName](const Meeting &meeting)
+	{
+        return meeting.getParticipator() == userName;
+    };
+    return storage_->queryMeeting(filter);
+}
+
+bool AgendaService::deleteMeeting(std::string userName, std::string title)
+{
+	auto filter = [userName, title](const Meeting &meeting)
+	{
+        return (meeting.getSponsor() == userName ||
+                meeting.getParticipator() == userName) &&
+                meeting.getTitle() == title;
+    };
+	return storage_->deleteMeeting(filter) > 0;
+}
+
+bool AgendaService::deleteAllMeetings(std::string userName)
+{
+	auto filter = [userName](const Meeting &meeting)
+	{
+        return meeting.getSponsor() == userName ||
+               meeting.getParticipator() == userName;
+    };
+    return storage_->deleteMeeting(filter) > 0;
+}
+
+void AgendaService::startAgenda()
+{
+	storage_ = Storage::getInstance();
+}
+
+void AgendaService::quitAgenda()
+{
+	storage_->sync();
+}
